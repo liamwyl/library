@@ -1,0 +1,177 @@
+
+    <!DOCTYPE html>
+    <html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="./lib/bootstrap.css">
+        <script src="./lib/jquery.js"></script>
+        <title>图书管理系统</title>
+    </head>
+
+    <body>
+        <!-- 添加图书的Panal面板 -->
+
+
+        <div class="container" style="margin-top:50px;">
+            <div class="panel panel-primary form-inline">
+                <div class="panel-heading">
+                    <h3 class="panel-title">图书管理系统</h3>
+                </div>
+                <div class="panel-body">
+
+                    <div class="input-group">
+                        <div class="input-group-addon">书名</div>
+                        <input type="text" class="form-control" id="iptBookname" placeholder="请输入书名" value="">
+                        <div class="input-group-addon">作者</div>
+                        <input type="text" class="form-control" id="iptAuthor" placeholder="请输入作者" value="">
+                        <div class="input-group-addon">出版社</div>
+                        <input type="text" class="form-control" id="iptPublisher" placeholder=" 请输入出版社" value="">
+                    </div>
+                    <button type="button" class="btn btn-primary" id="btnAdd">添加</button>
+
+
+                    <!-- 图书的表格 -->
+                    <table class="table table-bordered table-hover" style="margin-top:15px">
+                        <thead>
+                            <tr>
+                                <th>id</th>
+                                <th>书名</th>
+                                <th>作者</th>
+                                <th>出版社</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tb">
+                            <tr>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                </div>
+            </div>
+
+        </div>
+
+
+        <script>
+            $(function(){
+                // 获取图书列表的数据
+                function getBookList(){
+                    $.get('http://www.liulongbin.top:3006/api/getbooks',function (res) {
+                        if(res.status!==200){
+                            return alert("获取数据失败！")
+                        }
+                        console.log(res)
+
+                        // 定义一个数组存放获取的内容信息
+                        var rows=[]
+                        /*
+                         $.each()   循环遍历  
+                         参数：参与循环的数组
+                               回调函数（索引，内容）
+
+                        此处$.each()方法的作用：
+                        遍历数组，将获取的内容添加到定义的数组
+                        */ 
+                        $.each(res.data,function(i,item){
+                            // 将获得的内容添加到数组中
+                            rows.push('<tr><td>'+item.id+'</td><td>'
+                                +item.bookname+'</td><td>'+item.author+'</td><td>'
+                                +item.publisher+'</td><td>'
+                                +'<a href="javascript:;" class="deleteId" bookInfo='+item.bookname+' id='+item.id+'>删除</a></td></tr>')
+                                // console.log(item,i)
+                        })
+
+                        /*
+                        empty() 将内容清空    先将tobody中内容清空再将组成的新数组中添加到<tobody>中
+                            append()  jQuery中的方法,添加内容    
+                            rows.join('') 将数组按照指定形式转换为字符串
+
+                            join() 可以将数组转换为一个字符串
+                            该方法不会对原数组产生影响，而是将转换后的字符串作为结果返回
+                            在join()中可以指定一个字符串作为参数，这个字符串将会成为数组中元素的连接符
+                            如果不指定连接符，则默认使用,作为连接符
+                        */  
+                        $('#tb').empty().append(rows.join(''))
+
+                        
+                    })
+                }
+                getBookList()
+
+// 1.删除功能
+                // 此方法无法使用 一上来页面中并没有deleteId，可以通过代理方法实现
+                // $('#deleteId').on('click',function(){
+                //     alert('删除成功~')
+                // })
+
+
+                // 代理方式为动态添加元素绑定点击事件
+                $('#tb').on('click','.deleteId',function(){
+                    var delBookname=$(this).attr('bookInfo')
+                    var delId=$(this).attr('id')
+                    alert(delBookname+'删除成功！')
+                    $.get('http://www.liulongbin.top:3006/api/delbook',{id:delId},function(res){
+                        if(res.status!==200){
+                            alert('删除内容失败！')
+                        }
+                        // 重新调用以下列表
+                        getBookList()
+                    })
+
+                })
+
+
+
+
+ // 2.添加功能
+                $('#btnAdd').on('click',function(){
+                    //获取用户填写的信息  .trim()去除字符串两端的空格
+                    var inputName=$('#iptBookname').val().trim()
+                    var inputAuthor=$('#iptAuthor').val().trim()
+                    var inputPub=$('#iptPublisher').val().trim()
+
+                    console.log(inputName,inputAuthor,inputPub)
+                    if(inputName.length<=0||inputAuthor.length<=0||inputPub.length<=0){
+                        alert('请填写完整信息!')
+                    }else{
+                        // if(typeof(inputName)!=='string'){
+                        //     console.log('书名只能是中文')
+                        // }
+                        $.post('http://www.liulongbin.top:3006/api/addbook',{
+                        id:'',
+                        bookname:inputName,
+                        author:inputAuthor,
+                        publisher:inputPub
+                    },function(res){
+                        if(res.status>=200&&res.status<300){
+                   
+                            // 重新调用 展示在页面上
+                            getBookList()
+                            // 清空输入框内容
+                            $('#iptBookname').val('')
+                            $('#iptAuthor').val('')
+                            $('#iptPublisher').val('')
+                        }else{
+                            console.log('添加失败！')
+                        }
+                        
+                    })
+
+                    }
+
+                    
+                  
+
+                })
+            })
+
+        </script>
+
+    </body>
+
+    </html>
